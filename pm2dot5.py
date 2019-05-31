@@ -117,10 +117,11 @@ def main_fun():
             catch()
     
     """
-main_fun()
+if __name__ ==  '__main__':
+    main_fun()
 
 
-print("\n\n\n\n\n\n爬蟲程式 End")
+    print("\n\n\n\n\n\n爬蟲程式 End")
 
 
 
