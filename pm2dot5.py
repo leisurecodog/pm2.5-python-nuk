@@ -94,6 +94,7 @@ def catch():
 def main_fun():
 
     catch()
+    print("\n\n\n\n\n\n爬蟲程式 End")
 
     """
     now = datetime.datetime.now()
