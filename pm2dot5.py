@@ -1,7 +1,9 @@
 import re
 import requests
 import sys
-import datetime
+import time
+import threading
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
 
@@ -87,42 +89,20 @@ def catch():
         with open(area_file_name + '.txt', 'w') as file:
             for k, v in station.items():
                 file.writelines([k, '\n', ' '.join(v), '\n'])
-
-        #print(station)
-
-
 def main_fun():
 
     catch()
-    print("\n\n\n\n\n\n爬蟲程式 End")
-
-    """
-    now = datetime.datetime.now()
-    year = now.year
-    month = now.month
-    day = now.day
-    hour = now.hour
-    minute = now.minute
-    second = now.second
-
-    if hour == 23: 
-        sched_time = datetime.datetime(year, month, day + 1, 0, 3, 0)
-    else:
-        sched_time = datetime.datetime(year, month, day, hour + 1, 3, 0)
-
+    print('Finish!')
+    now = datetime.now()
     
-    while True:
-        now = datetime.datetime.now()
-        if sched_time < now < sched_time + datetime.timedelta(hours = 1) and sched_time + datetime.timedelta(hours = 1) - now < 1:
-            sched_time = sched_time + datetime.timedelta(hours = 1)
-            catch()
-    
-    """
-if __name__ ==  '__main__':
+    time_wait = 3600 - (now.minute * 60 + now.second) + 300
+    first = threading.Timer(time_wait, main_fun)
+    first.start()
+
+
+
+if __name__ == '__main__':
     main_fun()
-
-
-    print("\n\n\n\n\n\n爬蟲程式 End")
 
 
 
