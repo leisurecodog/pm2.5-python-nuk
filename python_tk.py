@@ -38,28 +38,34 @@ def reset_tabstop(event):
 class DetailFrame(tk.Frame):
     def __init__(self, master, **kw):
         tk.Button.__init__(self,master=master,**kw)
-        self.label_list = [ Label(self, font=('Arial',12), anchor='center', bg='white', relief=FLAT) for i in range(8)]
+        self.label_list = [ Label(self, anchor='center', width=30, bg='white', relief=FLAT) for i in range(8)]
         self.titles = ['AQI(空氣品質)', '臭氧', '細懸浮微粒', '懸浮微粒', '一氧化碳', '二氧化硫', '二氧化氮']
     def set_info(self,data):
-        self.label_list[0].configure(text=data[0], width=30)
+        # station name initialize
+        self.label_list[0].configure(text=data[0], font=('Verdana',12))
         self.label_list[0].pack(fill=X)
-        # cancel button
+        
+        # set cancel button
         self.cancel = Button(self.label_list[0], compound=TOP, text='X', bg=self.label_list[0]['background'], command=destroy_detail, relief=FLAT)
         self.cancel.pack(side=RIGHT)
+        
+        # each line content
         count = 1
-        for i, j in zip(self.label_list[1:],data[1:]):
+        for i in self.label_list[1:]:
             if count == 1:
-                i.configure(bg=put_color(int(j)))
-            tmp1 = Text(i, height=2, width=30, bg=i['background'], relief=FLAT)
+                i.configure(bg=put_color(int(data[count])))
+                if data[count] == '-1':
+                    data[count] = '設備維護中'
+            tmp1 = Text(i, height=3, width=30, font=('Times New Roman',12), bg=i['background'], relief=FLAT)
             tmp1.insert(END,self.titles[count-1] + '\t' + data[count])
             tmp1.pack(fill=X)
             tmp1.bind("<Configure>", reset_tabstop)
             i.pack(fill=X)
             count += 1
-    
-
+            
 def hit_me():
     var.set('you hit me')
+    
 def destroy_detail():
     global d_frame, timer
     d_frame.destroy()
@@ -125,7 +131,7 @@ def handler(aqi_value, station_name, station):
     
     # destroy it
     d_frame.destroy()
-    d_frame = DetailFrame(window, bg='white', width=200, height=30, relief=GROOVE)
+    d_frame = DetailFrame(window, bg='white', width=200, height=30, relief=SOLID)
     d_frame.set_info([station_name] + station[station_name].split())
     d_frame.place(x=270, y=30)
     
@@ -265,6 +271,7 @@ if __name__ == '__main__':
     # photo of taiwan
     ptaiwan = Label(window, image=taiwan, bg='white')
     ptaiwan.pack(side=RIGHT)
+    
     all_area = []
     # initialize the timer
     timer = threading.Timer(.5,0,'','')
