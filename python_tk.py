@@ -32,10 +32,38 @@ class HoverButton(tk.Button):
     def on_leave(self,e):
         self['background'] = self.leavebg
 
+def reset_tabstop(event):
+    event.widget.configure(tabs=(event.width-8, "right"))
+    
+class DetailFrame(tk.Frame):
+    def __init__(self, master, **kw):
+        tk.Button.__init__(self,master=master,**kw)
+        self.label_list = [ Label(self, font=('Arial',12), anchor='center', bg='white', relief=FLAT) for i in range(8)]
+        self.titles = ['AQI(空氣品質)', '臭氧', '細懸浮微粒', '懸浮微粒', '一氧化碳', '二氧化硫', '二氧化氮']
+    def set_info(self,data):
+        self.label_list[0].configure(text=data[0], width=30)
+        self.label_list[0].pack(fill=X)
+        # cancel button
+        self.cancel = Button(self.label_list[0], compound=TOP, text='X', bg=self.label_list[0]['background'], command=destroy_detail, relief=FLAT)
+        self.cancel.pack(side=RIGHT)
+        count = 1
+        for i, j in zip(self.label_list[1:],data[1:]):
+            if count == 1:
+                i.configure(bg=put_color(int(j)))
+            tmp1 = Text(i, height=2, width=30, bg=i['background'], relief=FLAT)
+            tmp1.insert(END,self.titles[count-1] + '\t' + data[count])
+            tmp1.pack(fill=X)
+            tmp1.bind("<Configure>", reset_tabstop)
+            i.pack(fill=X)
+            count += 1
+    
 
 def hit_me():
     var.set('you hit me')
-
+def destroy_detail():
+    global d_frame, timer
+    d_frame.destroy()
+    timer.cancel()
 
 '''
 clear function:
@@ -47,11 +75,11 @@ def clear():
     #detail_list used to store station_name
     #label_list used to store label in ui
     #btn_close is 代表關閉的 'x'符號
-    global detail_list, h_frame, btn_close, timer
+    global detail_list, d_frame, timer
     for t in detail_list:
         t.destroy()
         del t
-    h_frame.destroy()
+    d_frame.destroy()
     
     if timer.is_alive():
         timer.cancel()
@@ -93,38 +121,15 @@ handler function:
     # will call put_color function(above) to get color when it needs
 '''
 def handler(aqi_value, station_name, station):
-    global h_frame, timer
-    label_x = 260
-    lb3_data = ''
-    def destroy_labels():
-        h_frame.destroy()
-        timer.cancel()
-        
-        
-    # destroy above global widgets when station button was clicked
-    h_frame.destroy()
+    global d_frame
     
-    h_frame = Frame(window, width=200, height=30,bg='white')
-    h_frame.place(x=label_x, y=30)
+    # destroy it
+    d_frame.destroy()
+    d_frame = DetailFrame(window, bg='white', width=200, height=30, relief=GROOVE)
+    d_frame.set_info([station_name] + station[station_name].split())
+    d_frame.place(x=270, y=30)
     
-    if aqi_value == -1:
-        lb3_data = '設備維護中'
-    else:
-        lb3_data = ['ND' if data == '-1' or data == '-' else data for data in station[station_name].split()]
-    # initialize the label2 and label3
-    label2 = tk.Label(h_frame, text=station_name, font=('Arial',12), width = 30, height=2)
-    label3 = tk.Label(h_frame, text=lb3_data, font=('Arial',12), width = 30, height=2)
-    label2.pack(fill=X)
-    label3.pack(fill=X)
     
-    color = put_color(aqi_value) # get color
-    
-    # btn_close:close label2 and label3
-    btn_close = Button(label2, text='X', bg=color, compound=TOP, relief=FLAT, command=destroy_labels)
-    btn_close.pack(side=RIGHT)
-    label2.configure(bg=color)
-    label3.configure(bg=color)
-            
 '''
 recursion function:
     #when the area button is onclick
@@ -138,7 +143,7 @@ def recursion(station):
     timer = threading.Timer(3,lambda s=station : recursion(s))
     timer.start()
     
-    
+    print('recursion')
     station_name = list(station)
     length = len(station_name)
     if count_station < length:
@@ -231,13 +236,15 @@ def select_area(where):
 def _delete_window():
     window.destroy()
     timer.cancel()
+    tc.join()
 #=========================================main program================================================
 
 if __name__ == '__main__':
 
-    main_fun()
+    tc = threading.Thread(target=main_fun)
+    tc.start()
     window = tk.Tk()
-    window.geometry("700x600+300+10")
+    window.geometry("850x600+300+10")
     window.title("Python期末專題-空氣指標小工具")
     window.configure(background='white')
     window.protocol("WM_DELETE_WINDOW",_delete_window)# when you click close(x)button will call this function
@@ -245,7 +252,7 @@ if __name__ == '__main__':
     # 
     btn_frame = Frame(window, relief=GROOVE, bg='purple',width=130)# save main btns
     btn_frame.pack(side=LEFT,fill=BOTH)
-    h_frame = Frame(window)
+    d_frame = DetailFrame(window)
     var = tk.StringVar()#文字變亮儲存器
     taiwan = ImageTk.PhotoImage(Image.open('photo/taiwan-total.png'))
     
@@ -281,12 +288,15 @@ if __name__ == '__main__':
     #location of user ip , and 優先顯示那地區的測站
     dic = get_pos()
     c_index = dic['city'].find(' ')
-    city_name = dic['city'][:c_index]
+    if c_index == -1:
+        city_name = dic['city']
+    else:
+        city_name = dic['city'][:c_index]
     city_name = city_name.lower()
+    
     all_city = [('keelung','new taipei','taipei','taoyuan'),('hsinchu','miaoli'),('taichung','nantou','changhua')
                 ,('yunlin','chiayi','tainan'),('kaohsiung','pingtung ') 
                 ,('yilan'),('taitung','hualien'),('lienchiang'),('kinmen') ,('penghu')]
-    city_name='tainan'
     for i in range(len(all_city)):
         if city_name in all_city[i]:
             select_area(all_area[i])
