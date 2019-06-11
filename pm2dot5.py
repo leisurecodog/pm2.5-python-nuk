@@ -92,7 +92,6 @@ def catch():
 def main_fun():
 
     catch()
-    print('Finish!')
     now = datetime.now()
     
     time_wait = 3600 - (now.minute * 60 + now.second) + 300
@@ -103,6 +102,7 @@ def main_fun():
 
 if __name__ == '__main__':
     main_fun()
+    catch()
 
 
 

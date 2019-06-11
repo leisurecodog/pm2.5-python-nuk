@@ -22,15 +22,17 @@ HoverButton class:
 class HoverButton(tk.Button):
     def __init__(self, master, **kw):
         tk.Button.__init__(self,master=master,**kw)
-        self.leavebg = 'purple'
+        self.color_dict = {'gray70':'gray80', 'green2':'pale green', 'yellow':'yellow2', 'dark orange':'orange', 'red3':'red2',
+                          'purple':'orchid3', 'saddle brown':'sandy brown'}
+        self.invert_color = {j:i for i, j in self.color_dict.items()}
         self.bind("<Enter>", self.on_enter)
         self.bind("<Leave>", self.on_leave)
 
     def on_enter(self,e):
-        self['background'] = self['activebackground']
+        self['background'] = self.color_dict[self['background']]
 
     def on_leave(self,e):
-        self['background'] = self.leavebg
+        self['background'] = self.invert_color[self['background']]
 
 def reset_tabstop(event):
     event.widget.configure(tabs=(event.width-8, "right"))
@@ -39,7 +41,8 @@ class DetailFrame(tk.Frame):
     def __init__(self, master, **kw):
         tk.Button.__init__(self,master=master,**kw)
         self.label_list = [ Label(self, anchor='center', width=30, bg='white', relief=FLAT) for i in range(8)]
-        self.titles = ['AQI(空氣品質)', '臭氧', '細懸浮微粒', '懸浮微粒', '一氧化碳', '二氧化硫', '二氧化氮']
+        self.titles = ['空氣品質(AQI)', '臭氧(O₃)', '細懸浮微粒(PM₂.₅)', '懸浮微粒(PM₁₀)', '一氧化碳(CO)', '二氧化硫(SO₂)', '二氧化氮(NO₂)']
+        self.units = ['', '(ppb)', '(μg/m³)', '(μg/m³)', '(ppm)', '(ppb)', '(ppb)']
     def set_info(self,data):
         # station name initialize
         self.label_list[0].configure(text=data[0], font=('Verdana',12))
@@ -56,8 +59,8 @@ class DetailFrame(tk.Frame):
                 i.configure(bg=put_color(int(data[count])))
                 if data[count] == '-1':
                     data[count] = '設備維護中'
-            tmp1 = Text(i, height=3, width=30, font=('Times New Roman',12), bg=i['background'], relief=FLAT)
-            tmp1.insert(END,self.titles[count-1] + '\t' + data[count])
+            tmp1 = Text(i, height=2, width=30, font=('Times New Roman',12), bg=i['background'], relief=FLAT)
+            tmp1.insert(END,self.titles[count-1] + '\t' + data[count] + self.units[count-1])
             tmp1.pack(fill=X)
             tmp1.bind("<Configure>", reset_tabstop)
             i.pack(fill=X)
@@ -113,7 +116,7 @@ def put_color(temp_value):
         return "red3"
     
     if temp_value <= 300:
-        return "purple3"
+        return "purple"
     
     return  "saddle brown"
 
@@ -133,7 +136,7 @@ def handler(aqi_value, station_name, station):
     d_frame.destroy()
     d_frame = DetailFrame(window, bg='white', width=200, height=30, relief=SOLID)
     d_frame.set_info([station_name] + station[station_name].split())
-    d_frame.place(x=270, y=30)
+    d_frame.place(x=290, y=120)
     
     
 '''
@@ -149,7 +152,6 @@ def recursion(station):
     timer = threading.Timer(3,lambda s=station : recursion(s))
     timer.start()
     
-    print('recursion')
     station_name = list(station)
     length = len(station_name)
     if count_station < length:
@@ -176,8 +178,8 @@ def new_station(station, area_y):
         
         info = station[test3[i]].split()# information of each station
         
-        tmp = Button(window, text=str(test3[i]), font = ('Arial',12))
-        tmp.place(x=130, y=area_y+22*i, width=120, height=22)
+        tmp = HoverButton(window, text=str(test3[i]), font = ('Arial',12))
+        tmp.place(x=130, y=area_y+22*i, width=130, height=22)
 
         temp_value = int(info[0])
         # info[0] is AQI(if station is x then info[0] is -1)
@@ -246,7 +248,7 @@ def _delete_window():
 #=========================================main program================================================
 
 if __name__ == '__main__':
-
+    
     tc = threading.Thread(target=main_fun)
     tc.start()
     window = tk.Tk()
@@ -255,30 +257,32 @@ if __name__ == '__main__':
     window.configure(background='white')
     window.protocol("WM_DELETE_WINDOW",_delete_window)# when you click close(x)button will call this function
     
-    # 
+     
     btn_frame = Frame(window, relief=GROOVE, bg='purple',width=130)# save main btns
     btn_frame.pack(side=LEFT,fill=BOTH)
     d_frame = DetailFrame(window)
     var = tk.StringVar()#文字變亮儲存器
     taiwan = ImageTk.PhotoImage(Image.open('photo/taiwan-total.png'))
-    
+    color_mean = ImageTk.PhotoImage(Image.open('photo/color-meaning.png'))
     city = []
     detail_list = []
     label_list = []
+    all_area = []
     area = {'北部':'North', '竹苗':'Chu-Miao', '中部':'Central', '雲嘉南':'Yun-Chia-Nan',
             '高屏':'KaoPing', '宜蘭':'Yilan', '花東':'Hua-Tung', '馬祖':'Matsu', '金門':'Kinmen', '馬公':'Magong'}
 
     # photo of taiwan
     ptaiwan = Label(window, image=taiwan, bg='white')
     ptaiwan.pack(side=RIGHT)
+    color = Label(window, image=color_mean, bg='white')
+    color.place(x=155, y=10)
     
-    all_area = []
     # initialize the timer
     timer = threading.Timer(.5,0,'','')
     
     # the area button
     for x in area.keys():
-        tmp_button = HoverButton(btn_frame, compound = CENTER, bg='purple', fg='white', activebackground='orchid3', text = x, font = ('Arial',"14","bold"),
+        tmp_button = HoverButton(btn_frame, compound = CENTER, bg='purple', fg='white', text = x, font = ('Arial',"14","bold"),
                             command=lambda val=area[x]: select_area(val), relief=FLAT)
         tmp_button.pack()
         city.append(tmp_button)
@@ -295,10 +299,13 @@ if __name__ == '__main__':
     #location of user ip , and 優先顯示那地區的測站
     dic = get_pos()
     c_index = dic['city'].find(' ')
-    if c_index == -1:
-        city_name = dic['city']
-    else:
-        city_name = dic['city'][:c_index]
+    try:
+        if c_index == -1:
+            city_name = dic['city']
+        else:
+            city_name = dic['city'][:c_index]
+    except KeyError:
+        city_name = 'kaohsiung'
     city_name = city_name.lower()
     
     all_city = [('keelung','new taipei','taipei','taoyuan'),('hsinchu','miaoli'),('taichung','nantou','changhua')
