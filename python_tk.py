@@ -225,7 +225,7 @@ def select_area(where):
     station_n = {}
     total = []
     # open data
-    with open(where + '.txt','r')as f:
+    with open('area/' + where + '.txt','r')as f:
         lst = f.readlines()
         for i in range(len(lst)):
             lst[i] = lst[i].strip('\n')

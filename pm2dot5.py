@@ -86,7 +86,7 @@ def catch():
             station[i].append(s.text)
 
 
-        with open(area_file_name + '.txt', 'w') as file:
+        with open('area/' + area_file_name + '.txt', 'w') as file:
             for k, v in station.items():
                 file.writelines([k, '\n', ' '.join(v), '\n'])
 def main_fun():
