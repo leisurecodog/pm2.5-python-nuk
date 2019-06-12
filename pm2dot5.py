@@ -90,8 +90,8 @@ def catch():
             for k, v in station.items():
                 file.writelines([k, '\n', ' '.join(v), '\n'])
 def main_fun():
-
     catch()
+    print("Finish!")
     now = datetime.now()
     
     time_wait = 3600 - (now.minute * 60 + now.second) + 300

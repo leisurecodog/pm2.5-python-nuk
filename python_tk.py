@@ -298,8 +298,8 @@ if __name__ == '__main__':
     
     #location of user ip , and 優先顯示那地區的測站
     dic = get_pos()
-    c_index = dic['city'].find(' ')
     try:
+        c_index = dic['city'].find(' ')
         if c_index == -1:
             city_name = dic['city']
         else:
